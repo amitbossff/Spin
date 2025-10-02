@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AmitTG</title>
+<style>
+body {
+  margin: 0;
+  font-family: 'Poppins', sans-serif;
+  background: radial-gradient(circle at top, #0f172a, #020617);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  overflow: hidden;
+}
+h1 {
+  margin: 10px 0;
+  font-size: 1.6rem;
+  background: linear-gradient(90deg, #06b6d4, #3b82f6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-align: center;
+}
+.controls {
+  margin: 12px 0;
+  display: flex;
+  gap: 10px;
+}
+select, button {
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: none;
+  font-size: 15px;
+  font-weight: 600;
+}
+select {
+  background: rgba(255,255,255,0.1);
+  color: #fff;
+  backdrop-filter: blur(10px);
+}
+button {
+  background: linear-gradient(135deg, #3b82f6, #06b6d4);
+  color: #fff;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(59,130,246,0.4);
+  transition: transform 0.2s;
+}
+button:active { transform: scale(0.97); }
+.wheel-container {
+  position: relative;
+  width: 280px;
+  height: 280px;
+  margin: 20px 0;
+}
+.wheel {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 8px solid rgba(255,255,255,0.08);
+  background: conic-gradient(
+    #06b6d4 0deg 36deg, #3b82f6 36deg 72deg,
+    #9333ea 72deg 108deg, #f59e0b 108deg 144deg,
+    #ef4444 144deg 180deg, #10b981 180deg 216deg,
+    #e11d48 216deg 252deg, #14b8a6 252deg 288deg,
+    #f43f5e 288deg 324deg, #0ea5e9 324deg 360deg
+  );
+  position: relative;
+  transform: rotate(0deg);
+  transition: transform 5s cubic-bezier(.17,.67,.83,.67);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.wheel span {
+  position: absolute;
+  font-weight: 700;
+  font-size: 16px;
+  color: #fff;
+  text-shadow: 0 2px 5px rgba(0,0,0,0.6);
+}
+.pointer {
+  position: absolute;
+  top: -18px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0; height: 0;
+  border-left: 14px solid transparent;
+  border-right: 14px solid transparent;
+  border-bottom: 24px solid #ffd166;
+  z-index: 10;
+}
+.result {
+  margin-top: 14px;
+  font-size: 1.3rem;
+  font-weight: 700;
+  text-align: center;
+  min-height: 30px;
+}
+.try-btn {
+  margin-top: 12px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  border: none;
+  font-weight: 700;
+  cursor: pointer;
+  background: linear-gradient(90deg,#06b6d4,#3b82f6);
+  color: #001;
+  display: none;
+}
+</style>
+<body>
+<h1>🎡 Spin to Win</h1>
+
+<div class="wheel-container">
+  <div class="pointer"></div>
+  <div class="wheel" id="wheel"></div>
+</div>
+
+<div class="controls" id="controls">
+  <select id="pick"></select>
+  <button id="spinBtn">SPIN</button>
+</div>
+
+<div class="result" id="result"></div>
+<button class="try-btn" id="tryBtn">Try Again</button>
+
+<script>
+const N = 10;
+const wheel = document.getElementById("wheel");
+const pick = document.getElementById("pick");
+const spinBtn = document.getElementById("spinBtn");
+const controls = document.getElementById("controls");
+const result = document.getElementById("result");
+const tryBtn = document.getElementById("tryBtn");
+
+// populate wheel dynamically
+function populateWheel(){
+  wheel.innerHTML = "";
+  pick.innerHTML = "";
+  const radius = wheel.offsetWidth/2 - 30;
+  for(let i=1;i<=N;i++){
+    pick.innerHTML += `<option value="${i}">${i}</option>`;
+    let span = document.createElement("span");
+    let angle = (360 / N) * i;
+    span.style.transform = `rotate(${angle}deg) translate(${radius}px) rotate(-${angle}deg)`;
+    span.innerText = i;
+    wheel.appendChild(span);
+  }
+}
+populateWheel();
+window.addEventListener("resize", populateWheel);
+
+spinBtn.onclick = () => {
+  if(spinBtn.disabled) return;
+  spinBtn.disabled = true;
+
+  controls.style.display = "none";
+  result.textContent = "Spinning...";
+
+  let chosen = +pick.value;
+
+  // cheat: selected number never lands
+  let landed;
+  do { landed = Math.floor(Math.random()*N)+1 } while(landed===chosen);
+
+  // calculate rotation so landed number aligns under pointer (top)
+  const segmentDeg = 360 / N;
+  const middle = (landed-1)*segmentDeg + segmentDeg/2;
+  const spins = 6 + Math.floor(Math.random()*3);
+  const finalDeg = spins*360 + (360 - middle);
+
+  wheel.style.transition = `transform 5s cubic-bezier(.17,.67,.83,.67)`;
+  requestAnimationFrame(()=> wheel.style.transform = `rotate(${finalDeg}deg)`);
+
+  wheel.addEventListener('transitionend', function onEnd(){
+    wheel.style.transition = '';
+    result.textContent = `Selected ${chosen}, Landed on ${landed}`;
+    tryBtn.style.display = "inline-block";
+    wheel.removeEventListener('transitionend', onEnd);
+  });
+};
+
+// reload page on try again
+tryBtn.onclick = () => location.reload();
+</script>
+</body>
+</html>
